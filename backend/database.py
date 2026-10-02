@@ -1,6 +1,18 @@
 import sqlite3
 import os
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
+
+# 대한민국 표준시(KST, UTC+9) 정의
+KST = timezone(timedelta(hours=9))
+
+def get_kst_now():
+    return datetime.now(KST)
+
+def get_kst_str():
+    return get_kst_now().strftime("%Y-%m-%d %H:%M:%S")
+
+def get_kst_display():
+    return get_kst_now().strftime("%Y.%m.%d %H:%M")
 
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "messenger.db")
 
@@ -69,7 +81,7 @@ def init_db():
     )
     """)
     
-    # 마스터 계정 초기 생성 확인
+    # 마스터 계정 초기 생성 확인 및 이름 업데이트 ('오즈샵')
     cursor.execute("SELECT id FROM users WHERE user_type = 'master'")
     master_user = cursor.fetchone()
     if not master_user:
@@ -79,17 +91,19 @@ def init_db():
         """, (
             "master_fixed_session",
             "master",
-            "오즈",
+            "오즈샵",
             "skpark@iconix.co.kr",
-            datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            get_kst_str()
         ))
+    else:
+        cursor.execute("UPDATE users SET nickname = '오즈샵' WHERE user_type = 'master'")
     
-    # 기본 빠른 답변 템플릿 추가
+    # 기본 빠른 답변 템플릿 추가 (초기 설정 또는 없으면 삽입)
     cursor.execute("SELECT COUNT(*) FROM canned_responses")
     if cursor.fetchone()[0] == 0:
         default_templates = [
-            ("인사", "안녕하세요! 오즈 메신저입니다. 문의사항 있으시면 언제든 편하게 남겨주세요."),
-            ("계좌 안내", "입금 계좌: 국민은행 123-456-789012 (예금주: 오즈) / 입금 후 주문자명을 남겨주시면 확인이 빠릅니다."),
+            ("인사", "안녕하세요! 오즈샵입니다. 문의사항 있으시면 언제든 편하게 남겨주세요. 🌿"),
+            ("계좌 안내", "입금 계좌: 국민은행 123-456-789012 (예금주: 오즈샵) / 입금 후 주문자명을 남겨주시면 확인이 빠릅니다."),
             ("배송 안내", "평일 오후 3시 이전 주문 건은 당일 출고되며, 출고 후 1~2일 내에 수령 가능합니다."),
             ("교환/반품 안내", "상품 수령 후 7일 이내에 미개봉 상태로 접수 시 교환 및 반품이 가능합니다.")
         ]
@@ -100,4 +114,4 @@ def init_db():
 
 if __name__ == "__main__":
     init_db()
-    print("Database initialized successfully.")
+    print("Database initialized successfully with KST timezone.")

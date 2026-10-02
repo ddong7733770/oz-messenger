@@ -1,7 +1,6 @@
 import os
 import shutil
 import uuid
-from datetime import datetime
 from typing import List, Dict, Optional
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, UploadFile, File, Form, HTTPException, Depends
@@ -10,12 +9,12 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from .database import get_db, init_db
+from .database import get_db, init_db, get_kst_now, get_kst_str, get_kst_display
 
 # 앱 초기화 및 DB 생성
 init_db()
 
-app = FastAPI(title="오즈 메신저 (Oz Messenger)")
+app = FastAPI(title="오즈샵 메신저 (Oz Shop Messenger)")
 
 # CORS 설정
 app.add_middleware(
@@ -109,6 +108,10 @@ class CannedResponseCreate(BaseModel):
     title: str
     content: str
 
+class CannedResponseUpdate(BaseModel):
+    title: str
+    content: str
+
 
 # --- 페이지 라우트 ---
 @app.get("/")
@@ -139,7 +142,7 @@ async def master_login(req: MasterLoginRequest):
             "success": True,
             "user": {
                 "id": master["id"],
-                "nickname": master["nickname"],
+                "nickname": master["nickname"] or "오즈샵",
                 "email": master["email"],
                 "user_type": "master",
                 "token": "master_authenticated_7810"
@@ -157,8 +160,8 @@ async def client_join(req: ClientJoinRequest):
 
     conn = get_db()
     cursor = conn.cursor()
-    now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    now_display = datetime.now().strftime("%Y.%m.%d %H:%M")
+    now_str = get_kst_str()
+    now_display = get_kst_display()
 
     # 기존 session_id가 있고 유효한지 확인
     user = None
@@ -183,15 +186,15 @@ async def client_join(req: ClientJoinRequest):
         """, (user_id, now_str, now_str, "대화가 시작되었습니다.", now_display))
         room_id = cursor.lastrowid
 
-        # 최초 입장 시 "오즈" 마스터의 자동 환영 메시지 생성
+        # 최초 입장 시 "오즈샵" 마스터의 자동 환영 메시지 생성
         cursor.execute("SELECT id FROM users WHERE user_type = 'master'")
         master = cursor.fetchone()
         master_id = master["id"] if master else 1
 
-        welcome_text = f"안녕하세요, {nickname}님! 오즈 메신저에 오신 것을 환영합니다. 🌿\n상품 문의나 주문 관련 질문을 남겨주시면 담당자가 신속히 답변해 드리겠습니다."
+        welcome_text = f"안녕하세요, {nickname}님! 오즈샵에 오신 것을 환영합니다. 🌿\n상품 문의나 주문 관련 질문을 남겨주시면 담당자가 신속히 답변해 드리겠습니다."
         cursor.execute("""
         INSERT INTO messages (room_id, sender_id, sender_type, sender_name, msg_type, content, created_at, is_read)
-        VALUES (?, ?, 'master', '오즈', 'text', ?, ?, 1)
+        VALUES (?, ?, 'master', '오즈샵', 'text', ?, ?, 1)
         """, (room_id, master_id, welcome_text, now_display))
 
         conn.commit()
@@ -333,7 +336,7 @@ async def upload_file(file: UploadFile = File(...)):
     }
 
 
-# 8. 빠른 답변(Canned Responses) API
+# 8. 빠른 답변(Canned Responses) API - 조회, 추가, 수정, 삭제
 @app.get("/api/templates")
 async def get_templates():
     conn = get_db()
@@ -353,6 +356,24 @@ async def add_template(req: CannedResponseCreate):
     conn.close()
     return {"success": True, "id": new_id, "title": req.title, "content": req.content}
 
+@app.put("/api/templates/{template_id}")
+async def update_template(template_id: int, req: CannedResponseUpdate):
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE canned_responses SET title = ?, content = ? WHERE id = ?", (req.title, req.content, template_id))
+    conn.commit()
+    conn.close()
+    return {"success": True, "id": template_id, "title": req.title, "content": req.content}
+
+@app.delete("/api/templates/{template_id}")
+async def delete_template(template_id: int):
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM canned_responses WHERE id = ?", (template_id,))
+    conn.commit()
+    conn.close()
+    return {"success": True, "id": template_id}
+
 
 # --- 실시간 WebSocket 라우트 ---
 
@@ -363,7 +384,6 @@ async def websocket_room(websocket: WebSocket, room_id: int):
     try:
         while True:
             data = await websocket.receive_json()
-            # 데이터 수신 형태: { sender_type, sender_name, msg_type, content, file_name, file_size }
             sender_type = data.get("sender_type", "client")
             sender_name = data.get("sender_name", "고객")
             msg_type = data.get("msg_type", "text")
@@ -374,8 +394,9 @@ async def websocket_room(websocket: WebSocket, room_id: int):
             if not content and msg_type == "text":
                 continue
 
-            now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            now_display = datetime.now().strftime("%Y.%m.%d %H:%M")
+            # 대한민국 표준시(KST) 적용
+            now_str = get_kst_str()
+            now_display = get_kst_display()
 
             # DB 저장
             conn = get_db()
@@ -386,6 +407,7 @@ async def websocket_room(websocket: WebSocket, room_id: int):
                 cursor.execute("SELECT id FROM users WHERE user_type = 'master'")
                 master_row = cursor.fetchone()
                 sender_id = master_row["id"] if master_row else 1
+                sender_name = "오즈샵"  # 마스터 발신명 통일
             else:
                 cursor.execute("SELECT client_id FROM rooms WHERE id = ?", (room_id,))
                 room_row = cursor.fetchone()
@@ -464,7 +486,6 @@ async def websocket_master(websocket: WebSocket):
     await manager.connect_master(websocket)
     try:
         while True:
-            # 마스터로부터 핑이나 룸 전환/알림 읽음 등 수신
             await websocket.receive_text()
     except WebSocketDisconnect:
         manager.disconnect_master(websocket)

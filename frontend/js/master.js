@@ -35,6 +35,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     const masterSendBtn = document.getElementById('master-send-btn');
     const cannedResponsesBar = document.getElementById('canned-responses-bar');
 
+    // 빠른 답변 모달 요소
+    const openTemplateModalBtn = document.getElementById('open-template-modal-btn');
+    const closeTemplateModalBtn = document.getElementById('close-template-modal-btn');
+    const doneTemplateModalBtn = document.getElementById('done-template-modal-btn');
+    const templateModal = document.getElementById('template-modal');
+    const templateListContainer = document.getElementById('template-list-container');
+    const openNewTemplateBtn = document.getElementById('open-new-template-btn');
+    const newTemplateBox = document.getElementById('new-template-box');
+    const newTemplateTitle = document.getElementById('new-template-title');
+    const newTemplateContent = document.getElementById('new-template-content');
+    const saveNewTemplateBtn = document.getElementById('save-new-template-btn');
+    const cancelNewTemplateBtn = document.getElementById('cancel-new-template-btn');
+
     // 메모 패널
     const toggleMemoBtn = document.getElementById('toggle-memo-btn');
     const closeMemoBtn = document.getElementById('close-memo-btn');
@@ -253,7 +266,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         };
     }
 
-    // 6. 메시지 렌더링 (핵심: 마스터 대화=왼쪽, 일반 계정 대화=오른쪽)
+    // 6. 메시지 렌더링 (마스터 대화=왼쪽, 일반 계정 대화=오른쪽)
     function renderMasterMessage(msg) {
         const isMaster = (msg.sender_type === 'master');
         const container = document.createElement('div');
@@ -285,14 +298,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         if (isMaster) {
-            // [요구사항 4] 마스터 계정 대화는 왼쪽 노출
+            // [요구사항 4] 마스터 계정 대화는 왼쪽 노출 (오즈샵)
             container.innerHTML = `
                 <div class="flex items-end space-x-2 max-w-[80%]">
-                    <div class="w-8 h-8 rounded-full bg-teal-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0 shadow-sm mb-1">
-                        오즈
+                    <div class="w-8 h-8 rounded-full bg-teal-600 flex items-center justify-center text-white text-[11px] font-bold flex-shrink-0 shadow-sm mb-1">
+                        오즈샵
                     </div>
                     <div>
-                        <span class="text-[11px] font-semibold text-teal-700 ml-1 mb-1 block">오즈 (나)</span>
+                        <span class="text-[11px] font-semibold text-teal-700 ml-1 mb-1 block">오즈샵 (나)</span>
                         <div class="bubble-master p-3.5 border border-slate-200/80">
                             ${bodyContent}
                         </div>
@@ -334,7 +347,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         currentRoomWs.send(JSON.stringify({
             sender_type: 'master',
-            sender_name: '오즈',
+            sender_name: '오즈샵',
             msg_type: msgType,
             content: content,
             file_name: fileName,
@@ -417,7 +430,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    // 9. 빠른 답변 템플릿 로드
+    // 9. 빠른 답변 템플릿 바 로드
     async function loadTemplates() {
         try {
             const res = await fetch('/api/templates');
@@ -432,7 +445,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                     btn.title = tpl.content;
 
                     btn.addEventListener('click', () => {
-                        // 클릭 시 바로 입력창에 삽입
                         masterMessageInput.value = tpl.content;
                         masterMessageInput.focus();
                         masterMessageInput.style.height = 'auto';
@@ -448,7 +460,155 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     loadTemplates();
 
-    // 10. 상담 상태 변경
+    // 10. 빠른 답변 문구 관리 모달 로직
+    openTemplateModalBtn.addEventListener('click', () => {
+        templateModal.classList.remove('hidden');
+        loadTemplateEditList();
+    });
+
+    function closeTemplateModal() {
+        templateModal.classList.add('hidden');
+        newTemplateBox.classList.add('hidden');
+        loadTemplates(); // 대화창 빠른답변 바 동기화
+    }
+
+    closeTemplateModalBtn.addEventListener('click', closeTemplateModal);
+    doneTemplateModalBtn.addEventListener('click', closeTemplateModal);
+
+    // 모달 내 템플릿 목록 로드 및 렌더링
+    async function loadTemplateEditList() {
+        try {
+            const res = await fetch('/api/templates');
+            if (res.ok) {
+                const data = await res.json();
+                templateListContainer.innerHTML = '';
+                if (!data.templates || data.templates.length === 0) {
+                    templateListContainer.innerHTML = '<div class="p-6 text-center text-xs text-slate-400">등록된 빠른 답변이 없습니다.</div>';
+                    return;
+                }
+
+                data.templates.forEach(tpl => {
+                    const card = document.createElement('div');
+                    card.className = 'bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm space-y-2.5';
+                    card.innerHTML = `
+                        <div class="flex items-center justify-between">
+                            <input type="text" class="tpl-title-input font-bold text-xs text-slate-800 border-b border-transparent hover:border-slate-300 focus:border-teal-500 focus:outline-none pb-0.5 w-2/3 transition" value="${escapeHtml(tpl.title)}">
+                            <div class="flex items-center space-x-1.5">
+                                <button type="button" class="tpl-save-btn px-3 py-1 bg-teal-600 hover:bg-teal-700 text-white text-[11px] font-bold rounded-lg shadow-sm transition">저장</button>
+                                <button type="button" class="tpl-del-btn px-2.5 py-1 bg-slate-100 hover:bg-red-50 hover:text-red-600 text-slate-400 text-[11px] font-bold rounded-lg transition" title="삭제">&times;</button>
+                            </div>
+                        </div>
+                        <textarea rows="3" class="tpl-content-input w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:bg-white focus:outline-none focus:ring-1 focus:ring-teal-500 resize-none leading-relaxed">${escapeHtml(tpl.content)}</textarea>
+                    `;
+
+                    // 저장 버튼
+                    const titleInput = card.querySelector('.tpl-title-input');
+                    const contentInput = card.querySelector('.tpl-content-input');
+                    const saveBtn = card.querySelector('.tpl-save-btn');
+                    const delBtn = card.querySelector('.tpl-del-btn');
+
+                    saveBtn.addEventListener('click', async () => {
+                        const newTitle = titleInput.value.trim();
+                        const newContent = contentInput.value.trim();
+                        if (!newTitle || !newContent) {
+                            alert('제목과 내용을 모두 입력해주세요.');
+                            return;
+                        }
+
+                        try {
+                            saveBtn.disabled = true;
+                            saveBtn.textContent = '저장중...';
+                            const updateRes = await fetch(`/api/templates/${tpl.id}`, {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ title: newTitle, content: newContent })
+                            });
+                            if (updateRes.ok) {
+                                saveBtn.textContent = '완료!';
+                                saveBtn.classList.remove('bg-teal-600');
+                                saveBtn.classList.add('bg-emerald-600');
+                                setTimeout(() => {
+                                    saveBtn.textContent = '저장';
+                                    saveBtn.classList.remove('bg-emerald-600');
+                                    saveBtn.classList.add('bg-teal-600');
+                                    saveBtn.disabled = false;
+                                }, 1000);
+                            } else {
+                                alert('수정에 실패했습니다.');
+                                saveBtn.disabled = false;
+                                saveBtn.textContent = '저장';
+                            }
+                        } catch (err) {
+                            alert('저장 중 오류 발생');
+                            saveBtn.disabled = false;
+                            saveBtn.textContent = '저장';
+                        }
+                    });
+
+                    // 삭제 버튼
+                    delBtn.addEventListener('click', async () => {
+                        if (confirm(`'${tpl.title}' 빠른 답변을 삭제하시겠습니까?`)) {
+                            try {
+                                const delRes = await fetch(`/api/templates/${tpl.id}`, { method: 'DELETE' });
+                                if (delRes.ok) {
+                                    loadTemplateEditList();
+                                }
+                            } catch (e) {
+                                alert('삭제 중 오류 발생');
+                            }
+                        }
+                    });
+
+                    templateListContainer.appendChild(card);
+                });
+            }
+        } catch (e) {
+            console.error('템플릿 편집 목록 로드 실패:', e);
+        }
+    }
+
+    // 새 답변 추가 토글 & 저장
+    openNewTemplateBtn.addEventListener('click', () => {
+        newTemplateBox.classList.toggle('hidden');
+        if (!newTemplateBox.classList.contains('hidden')) {
+            newTemplateTitle.focus();
+        }
+    });
+
+    cancelNewTemplateBtn.addEventListener('click', () => {
+        newTemplateBox.classList.add('hidden');
+        newTemplateTitle.value = '';
+        newTemplateContent.value = '';
+    });
+
+    saveNewTemplateBtn.addEventListener('click', async () => {
+        const title = newTemplateTitle.value.trim();
+        const content = newTemplateContent.value.trim();
+        if (!title || !content) {
+            alert('제목과 내용을 모두 입력해주세요.');
+            return;
+        }
+
+        try {
+            const addRes = await fetch('/api/templates', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title, content })
+            });
+            if (addRes.ok) {
+                newTemplateTitle.value = '';
+                newTemplateContent.value = '';
+                newTemplateBox.classList.add('hidden');
+                loadTemplateEditList();
+            } else {
+                alert('추가 실패');
+            }
+        } catch (e) {
+            alert('추가 중 오류 발생');
+        }
+    });
+
+    // 11. 상담 상태 변경
     statusSelect.addEventListener('change', async () => {
         if (!currentRoomId) return;
         const newStatus = statusSelect.value;
@@ -483,7 +643,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    // 11. 고객 메모 저장 (디바운스 자동 저장)
+    // 12. 고객 메모 저장 (디바운스 자동 저장)
     toggleMemoBtn.addEventListener('click', () => {
         memoPanel.classList.toggle('hidden');
     });
@@ -509,7 +669,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }, 600);
     });
 
-    // 12. 필터 및 검색 이벤트
+    // 13. 필터 및 검색 이벤트
     filterTabs.forEach(tab => {
         tab.addEventListener('click', () => {
             filterTabs.forEach(t => {

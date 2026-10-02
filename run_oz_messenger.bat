@@ -1,9 +1,9 @@
 @echo off
 chcp 65001 > nul
-title 오즈 메신저 (Oz Messenger) 서버 실행기
+title 오즈샵 (Oz Shop) 메신저 서버 실행기
 
 echo ======================================================
-echo          🌿 오즈 메신저 (Oz Messenger) 서버 시작
+echo          🌿 오즈샵 (Oz Shop) 실시간 메신저 서버 시작
 echo ======================================================
 echo.
 
@@ -22,7 +22,7 @@ echo  - 모바일 웹:    http://%LOCAL_IP%:8000 (동일 Wi-Fi)
 echo.
 echo  * 마스터 계정:   skpark@iconix.co.kr
 echo  * 마스터 암호:   7810
-echo  * 대화명:        오즈
+echo  * 대화명:        오즈샵
 echo ======================================================
 echo.
 

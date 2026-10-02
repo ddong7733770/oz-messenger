@@ -82,12 +82,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             // 마스터 대화: 왼쪽 배치
             container.innerHTML = `
                 <div class="flex items-end space-x-2 max-w-[85%]">
-                    <!-- 오즈 아바타 -->
-                    <div class="w-8 h-8 rounded-full bg-teal-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0 shadow-sm mb-1">
-                        오즈
+                    <!-- 오즈샵 아바타 -->
+                    <div class="w-8 h-8 rounded-full bg-teal-600 flex items-center justify-center text-white text-[11px] font-bold flex-shrink-0 shadow-sm mb-1">
+                        오즈샵
                     </div>
                     <div>
-                        <span class="text-[11px] font-semibold text-slate-500 ml-1 mb-1 block">오즈 (담당자)</span>
+                        <span class="text-[11px] font-semibold text-slate-500 ml-1 mb-1 block">오즈샵 (담당자)</span>
                         <div class="bubble-master p-3.5 border border-slate-200/80">
                             ${bodyContent}
                         </div>
