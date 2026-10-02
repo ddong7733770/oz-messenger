@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>오즈 메신저 - 1:1 상담</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body class="bg-slate-100 flex justify-center app-height overflow-hidden">
+
+    <!-- 채팅 뷰포트 컨테이너 (모바일 풀스크린, 데스크탑 모바일 목업 형태) -->
+    <div class="w-full max-w-lg bg-white flex flex-col h-full shadow-2xl relative">
+        
+        <!-- 1. 상단 헤더 -->
+        <header class="bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between z-10">
+            <div class="flex items-center space-x-3">
+                <a href="/" class="p-1.5 -ml-1 text-slate-500 hover:text-slate-800 rounded-full hover:bg-slate-100 transition" title="처음으로">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                    </svg>
+                </a>
+                
+                <!-- 마스터 오즈 프로필 -->
+                <div class="relative">
+                    <div class="w-10 h-10 rounded-full bg-teal-600 flex items-center justify-center text-white font-bold text-sm shadow">
+                        오즈
+                    </div>
+                    <span class="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full"></span>
+                </div>
+                
+                <div>
+                    <div class="flex items-center space-x-1.5">
+                        <h2 class="font-bold text-slate-800 text-sm md:text-base">오즈 (담당자)</h2>
+                        <span class="bg-teal-100 text-teal-800 text-[10px] font-semibold px-1.5 py-0.5 rounded">공식</span>
+                    </div>
+                    <p class="text-[11px] text-emerald-600 font-medium">실시간 응대 중 &bull; 평균 몇 분 내 답변</p>
+                </div>
+            </div>
+
+            <!-- 내 프로필 뱃지 -->
+            <div class="text-right">
+                <span id="my-name-display" class="text-xs bg-slate-100 text-slate-600 font-medium px-2 py-1 rounded-lg border border-slate-200">
+                    손님
+                </span>
+            </div>
+        </header>
+
+        <!-- 2. 대화 영역 (스크롤 영역) -->
+        <main id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50">
+            <!-- 날짜 구분선 예시 -->
+            <div class="flex justify-center">
+                <span id="date-divider" class="bg-slate-200/80 text-slate-500 text-[11px] px-3 py-1 rounded-full font-medium">
+                    대화 시작
+                </span>
+            </div>
+            
+            <!-- 메시지들이 동적으로 삽입되는 영역 -->
+        </main>
+
+        <!-- 3. 첨부 메뉴 팝업 (사진/파일 선택창) -->
+        <div id="attach-menu" class="hidden absolute bottom-20 left-4 bg-white rounded-2xl shadow-xl border border-slate-100 p-2 z-20 flex space-x-2 animate-bounce-in">
+            <!-- 사진 전송 버튼 (모바일: 갤러리/카메라) -->
+            <label for="image-input" class="flex flex-col items-center justify-center w-16 h-16 rounded-xl hover:bg-teal-50 cursor-pointer text-slate-600 hover:text-teal-600 transition">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mb-1 text-teal-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span class="text-[11px] font-semibold">사진 전송</span>
+                <input type="file" id="image-input" accept="image/*" class="hidden">
+            </label>
+
+            <!-- 파일 전송 버튼 (문서 등) -->
+            <label for="file-input" class="flex flex-col items-center justify-center w-16 h-16 rounded-xl hover:bg-blue-50 cursor-pointer text-slate-600 hover:text-blue-600 transition">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mb-1 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                </svg>
+                <span class="text-[11px] font-semibold">파일 첨부</span>
+                <input type="file" id="file-input" class="hidden">
+            </label>
+        </div>
+
+        <!-- 4. 하단 입력 바 -->
+        <footer class="bg-white border-t border-slate-200 p-3 flex items-end space-x-2">
+            <!-- 첨부 토글 버튼 (+) -->
+            <button type="button" id="attach-toggle-btn" class="p-2.5 text-slate-500 hover:text-teal-600 hover:bg-slate-100 rounded-full transition flex-shrink-0" title="파일 첨부">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+            </button>
+
+            <!-- 텍스트 입력창 -->
+            <div class="flex-1 bg-slate-100 rounded-2xl px-4 py-2 border border-slate-200 focus-within:border-teal-500 focus-within:bg-white transition flex items-center">
+                <textarea 
+                    id="message-input" 
+                    rows="1" 
+                    placeholder="메시지를 입력하세요..." 
+                    class="w-full bg-transparent resize-none focus:outline-none text-sm text-slate-800 max-h-28"
+                ></textarea>
+            </div>
+
+            <!-- 전송 버튼 -->
+            <button 
+                type="button" 
+                id="send-btn" 
+                class="p-2.5 bg-teal-600 hover:bg-teal-700 active:scale-95 text-white rounded-full transition flex-shrink-0 shadow-md shadow-teal-600/30"
+                title="전송"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
+                </svg>
+            </button>
+        </footer>
+
+    </div>
+
+    <script src="/static/js/common.js"></script>
+    <script src="/static/js/client.js"></script>
+</body>
+</html>

@@ -1,0 +1,87 @@
+@charset "UTF-8";
+
+/* Pretendard 또는 시스템 폰트 기본 적용 */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* 모바일 100vh 대응 */
+.app-height {
+    height: 100vh;
+    height: 100dvh;
+}
+
+/* 스크롤바 미려하게 처리 */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: rgba(156, 163, 175, 0.4);
+    border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(107, 114, 128, 0.7);
+}
+
+/* 말풍선 꼬리 및 스타일 */
+.bubble-master {
+    background-color: #f3f4f6;
+    color: #1f2937;
+    border-radius: 1.125rem 1.125rem 1.125rem 0.25rem;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.bubble-client {
+    background-color: #0f766e; /* 테라코타 그린 / 틸 딥 에메랄드 */
+    color: #ffffff;
+    border-radius: 1.125rem 1.125rem 0.25rem 1.125rem;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+/* 이미지 라이트박스 */
+.lightbox-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background-color: rgba(0, 0, 0, 0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    cursor: zoom-out;
+}
+.lightbox-modal img {
+    max-width: 95%;
+    max-height: 90vh;
+    border-radius: 0.5rem;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    object-fit: contain;
+}
+
+/* 부드러운 애니메이션 */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.msg-anim {
+    animation: fadeIn 0.18s ease-out forwards;
+}
+
+/* 상태 배지 */
+.badge-waiting {
+    background-color: #fef3c7;
+    color: #b45309;
+}
+.badge-active {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+.badge-closed {
+    background-color: #f3f4f6;
+    color: #6b7280;
+}
